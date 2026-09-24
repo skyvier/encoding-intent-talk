@@ -4,14 +4,27 @@ The deck is implemented as a 16:9 Beamer presentation in `encoding-intent.tex`.
 
 ## Build
 
-From this directory:
+Enter the Nix development shell, then build the deck:
 
 ```sh
-latexmk -pdf encoding-intent.tex
+nix develop
+just build
 ```
 
-The source uses `pdflatex` and standard TeX Live packages. The two cover images
-are stored in `assets/` and referenced with relative paths.
+For a fast editing loop, continuously rebuild the PDF whenever a source file
+changes:
+
+```sh
+just watch
+```
+
+`latexmk` opens the PDF in the default viewer and refreshes it after successful
+builds. Stop the watcher with Ctrl-C. Run `just clean` to remove intermediate
+LaTeX files.
+
+The Nix shell provides `pdflatex`, `latexmk`, and the standard TeX Live packages
+used by the presentation. Images are stored in `assets/` and referenced with
+relative paths.
 
 ## GitHub Actions
 
