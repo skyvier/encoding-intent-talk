@@ -1,7 +1,7 @@
 \documentclass[10pt,aspectratio=169]{beamer}
 
-% Inspired by the practical Beamer setup in Joonas Laukka's
-% Helsinki Haskell Meetup presentation-without-notes.tex.
+% Pohjautuu Joonas Laukan Helsinki Haskell Meetup -esityksen
+% käytännölliseen Beamer-rakenteeseen presentation-without-notes.tex.
 \usetheme{Copenhagen}
 \beamertemplatenavigationsymbolsempty
 \setbeamertemplate{caption}[numbered]
@@ -10,6 +10,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage{lmodern}
 \usepackage{graphicx}
+\usepackage{tikz}
 \usepackage{listings}
 \usepackage{xcolor}
 \usepackage{microtype}
@@ -17,13 +18,18 @@
 
 \renewcommand{\familydefault}{\sfdefault}
 
-\definecolor{DeckBackground}{HTML}{EAF5FF}
-\definecolor{DeckText}{HTML}{102A43}
-\definecolor{DeckMuted}{HTML}{486581}
-\definecolor{DeckAccent}{HTML}{006D9C}
-\definecolor{DeckRed}{HTML}{B42318}
-\definecolor{DeckBlue}{HTML}{0077B6}
-\definecolor{CodeBackground}{HTML}{D8ECFA}
+\definecolor{DeckBackground}{HTML}{FCFDFE}
+\definecolor{DeckText}{HTML}{263442}
+\definecolor{DeckMuted}{HTML}{687786}
+\definecolor{DeckAccent}{HTML}{477A9B}
+\definecolor{DeckRed}{HTML}{B65C5C}
+\definecolor{DeckBlue}{HTML}{668BA8}
+\definecolor{CodeBackground}{HTML}{F2F5F7}
+\definecolor{CodeKeyword}{HTML}{355CA8}
+\definecolor{CodeType}{HTML}{7B4FA3}
+\definecolor{CodeString}{HTML}{2F7D68}
+\definecolor{CodeComment}{HTML}{71808C}
+\definecolor{CodeLiteral}{HTML}{B85C38}
 
 \setbeamercolor{normal text}{fg=DeckText,bg=DeckBackground}
 \setbeamercolor{structure}{fg=DeckAccent}
@@ -49,6 +55,23 @@
   \hfill{\color{DeckMuted}\scriptsize\insertframenumber}\hspace{6mm}\vspace{3mm}
 }
 
+\lstdefinelanguage{TypeScript}{
+  sensitive=true,
+  keywords={abstract,as,async,await,break,case,catch,class,const,continue,
+    declare,default,delete,do,else,enum,export,extends,finally,for,from,
+    function,get,if,implements,import,in,instanceof,interface,keyof,let,
+    module,namespace,new,of,private,protected,public,readonly,return,set,
+    static,super,switch,this,throw,try,type,typeof,var,while,with,yield,
+    satisfies},
+  morekeywords=[2]{any,bigint,boolean,never,number,object,string,symbol,
+    unknown,void},
+  morekeywords=[3]{false,null,true,undefined},
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]',
+  morestring=[b]"
+}
+
 \lstdefinestyle{deckcode}{
   basicstyle=\ttfamily\small\color{DeckText},
   backgroundcolor=\color{CodeBackground},
@@ -62,9 +85,14 @@
   showstringspaces=false,
   breaklines=true,
   tabsize=2,
-  keywordstyle=\color{DeckAccent}\bfseries,
-  commentstyle=\color{DeckMuted},
-  stringstyle=\color{DeckBlue}
+  keywordstyle=\color{CodeKeyword}\bfseries,
+  keywordstyle=[2]\color{CodeType}\bfseries,
+  keywordstyle=[3]\color{CodeLiteral}\bfseries,
+  commentstyle=\color{CodeComment}\itshape,
+  stringstyle=\color{CodeString},
+  emph={String,Int,Maybe,Proof,SignedJWT,ClaimsSet,AuthorizedJWT,
+    CanDeleteApps,IsPrime,ClaimsOf,LogTypeName,BuildLogFunction},
+  emphstyle=\color{CodeType}\bfseries
 }
 
 \newcommand{\accentline}[1]{{\color{DeckAccent}\bfseries #1}}
@@ -74,11 +102,31 @@
 \newcommand{\bottomline}[2][DeckAccent]{%
   \vfill{\color{#1}\large\bfseries #2}\par
 }
+\newcommand{\trustboundarychain}{%
+  \begin{tikzpicture}[
+    stage/.style={draw=DeckMuted,fill=CodeBackground,rounded corners=2pt,
+      minimum width=2.35cm,minimum height=.72cm,align=center,
+      text=DeckText,font=\small\bfseries},
+    boundary/.style={->,thick,draw=DeckAccent,>=stealth}
+  ]
+    \node[stage] (unknown) at (0,0) {Tuntematon};
+    \node[stage] (validated) at (3.55,0) {Validoitu};
+    \node[stage] (identified) at (7.10,0) {Tunnistettu};
+    \node[stage] (authorized) at (10.65,0) {Valtuutettu};
 
-\title{Encoding Intent:\\Type-Driven Development in the Age of AI}
-\subtitle{Types and evidence across trust boundaries}
+    \draw[boundary] (unknown) -- node[above,text=DeckMuted,font=\scriptsize] {tarkistus}
+      node[below,text=DeckAccent,font=\tiny\bfseries] {todiste} (validated);
+    \draw[boundary] (validated) -- node[above,text=DeckMuted,font=\scriptsize] {todennus}
+      node[below,text=DeckAccent,font=\tiny\bfseries] {todiste} (identified);
+    \draw[boundary] (identified) -- node[above,text=DeckMuted,font=\scriptsize] {valtuutus}
+      node[below,text=DeckAccent,font=\tiny\bfseries] {todiste} (authorized);
+  \end{tikzpicture}%
+}
+
+\title{Tarkoituksen koodaaminen:\\Tyyppivetoinen kehitys tekoälyn aikakaudella}
+\subtitle{Tyypit ja todisteet luottamusrajojen yli}
 \author{Joonas Laukka}
-\institute{Senior Consultant at Loihde}
+\institute{Seniorikonsultti, Loihde}
 \date{}
 
 \begin{document}
@@ -88,88 +136,261 @@
   \begin{columns}[T,onlytextwidth]
     \begin{column}{0.58\textwidth}
       \vspace{10mm}
-      {\color{DeckAccent}\fontsize{25}{28}\selectfont\bfseries Encoding Intent:}\par
+      {\color{DeckAccent}\fontsize{25}{28}\selectfont\bfseries Tarkoituksen koodaaminen:}\par
       \vspace{2mm}
-      {\color{DeckText}\fontsize{29}{32}\selectfont\bfseries
-        Type-Driven\\Development\\in the Age of AI}\par
-      \vspace{7mm}
-      {\color{DeckMuted}\large Types and evidence across trust boundaries}\par
+      {\color{DeckText}\fontsize{25}{28}\selectfont\bfseries
+        Tyyppivetoinen\\kehitys tekoälyn\\aikakaudella}\par
+      %\vspace{5mm}
+      %{\color{DeckMuted}\large Tyypit ja todisteet\\luottamusrajojen yli}\par
       \vfill
+      \vspace{10mm}
       {\large\bfseries Joonas Laukka}\par
-      {\color{DeckMuted}Senior Consultant at Loihde}
-    \end{column}
-    \begin{column}{0.38\textwidth}
-      \centering
-      \includegraphics[width=\linewidth,height=.52\paperheight,keepaspectratio]{assets/zurihac-stage.png}\par
-      \vspace{3mm}
-      \includegraphics[width=\linewidth,height=.17\paperheight,keepaspectratio]{assets/talk-title.png}
+      {\color{DeckMuted}Seniorikonsultti, Loihde}
     \end{column}
   \end{columns}
 \end{frame}}
 
-\begin{frame}[t]{Types narrow the space of possible programs}
-  \mbox{}\par
-  {\bfseries A signature documents what a function accepts and promises to return.}\par
-  \vspace{3mm}
-  {\color{DeckMuted}\large All syntactically valid programs}\par
-  \vspace{3mm}\hspace{10mm}{\color{DeckBlue}\large\bfseries Well-typed programs}\par
-  \vspace{3mm}\hspace{22mm}{\color{DeckAccent}\large\bfseries Programs satisfying domain-specific types}\par
-  \vspace{5mm}
-  {\small\muted{A type system can reject only the violations its types express.}}
-\end{frame}
+{\setbeamerfont{frametitle}{size=\fontsize{17}{20}\selectfont,series=\bfseries}
+\begin{frame}[t]{Tyypit rajaavat mahdollisten ohjelmien joukkoa}
+  \centering
+  \includegraphics[width=.96\textwidth,height=.67\textheight,keepaspectratio]{assets/valid-programs.png}\par
+  \vspace{1mm}
+  {\color{DeckAccent}\normalsize\bfseries Tyypit ohjaavat tekoälyagenttia kohti haluttuja ratkaisuja.}\par
+  {\color{DeckMuted}\small Tarkemmat tyypit jättävät vähemmän arvattavaa.}
+\end{frame}}
 
-\begin{frame}[fragile]{Typed holes expose the remaining problem}
+\begin{frame}[fragile]{Kielipalvelimen konteksti paljastaa jäljellä olevan ongelman}
   \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.53\textwidth}
-      \accentline{Incomplete program}
-\begin{lstlisting}[style=deckcode,language=Haskell]
-transform :: (a -> b) -> Maybe a -> Maybe b
+    \begin{column}{0.57\textwidth}
+      \accentline{Keskeneräinen ohjelma}
+\begin{lstlisting}[style=deckcode,language=TypeScript,basicstyle=\ttfamily\footnotesize\color{DeckText}]
+function transform<A, B>(
+  f: (value: A) => B,
+  value: A | undefined,
+): B | undefined {
+  if (value === undefined) return undefined;
 
-transform _ Nothing  = Nothing
-transform f (Just x) = Just _
+  const result: B = /* cursor */;
+  return result;
+}
 \end{lstlisting}
     \end{column}
-    \begin{column}{0.42\textwidth}
-      \blueline{Compiler response}
-\begin{lstlisting}[style=deckcode]
-Found hole: _ :: b
+    \begin{column}{0.38\textwidth}
+      \blueline{Kielipalvelimen konteksti}
+\begin{lstlisting}[style=deckcode,basicstyle=\ttfamily\footnotesize\color{DeckText}]
+Odotettu tyyppi:
+  B
 
-Relevant bindings:
-  f :: a -> b
-  x :: a
+Saatavilla:
+  f: (value: A) => B
+  value: A
 \end{lstlisting}
     \end{column}
   \end{columns}
   \vfill
-  {\color{DeckAccent}\Large\bfseries The hole asks: what value of type \texttt{b} can be built here?}\par
-  \muted{The available function and value make \texttt{f x} the obvious candidate.}
+  {\color{DeckAccent}\large\bfseries Kohdistin kysyy: mikä tyypin \texttt{B} lauseke tähän voidaan rakentaa?}\par
+  \muted{Saatavilla oleva funktio ja arvo tekevät lausekkeesta \texttt{f(value)} suoran ehdokkaan.}
 \end{frame}
 
-\begin{frame}[fragile]{Types turn implementation into constrained search}
-\begin{lstlisting}[style=deckcode,language=Haskell]
-transform f (Just x) = Just (f x)
+\begin{frame}[fragile]{Tyypit muuttavat toteutuksen rajatuksi hauksi}
+\begin{lstlisting}[style=deckcode,language=TypeScript]
+const result: B = f(value);
 \end{lstlisting}
-  \vspace{5mm}
-  {\color{DeckAccent}\fontsize{23}{27}\selectfont\bfseries
-  Could a human-written type signature\\guide an AI agent in the same way?}\par
+  {\scriptsize\muted{TypeScriptissä ei ole natiiveja tyypitettyjä aukkoja.}}\par
+  \vspace{3mm}
+  {\color{DeckAccent}\fontsize{20}{23}\selectfont\bfseries
+  Voisiko ihmisen kirjoittama tyyppiallekirjoitus\\ohjata tekoälyagenttia samalla tavalla?}\par
   \vfill
-  \danger{An agent can also modify the types.}\par
+  \danger{Agentti voi myös muuttaa tyyppejä.}\par
   \vspace{2mm}
-  \muted{The signature creates guidance and review pressure.\\
-  The surrounding workflow must protect the contract.}
+  \muted{Kielipalvelin tarjoaa odotetun tyypin ja olennaiset sidonnat.\\
+  Ympäröivän työnkulun on silti suojattava sopimusta.}
 \end{frame}
 
-\begin{frame}{An LLM-bound field can grow without a limit}
+{\setbeamerfont{frametitle}{size=\fontsize{17}{20}\selectfont,series=\bfseries}
+\begin{frame}{Tyyppijärjestelmät ohjaavat generointia yhä enemmän}
+  \vspace{-1mm}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.59\textwidth}
+      \includegraphics[width=\linewidth,height=.18\textheight,keepaspectratio]{assets/paper-typed-holes-title.png}
+    \end{column}
+    \begin{column}{0.37\textwidth}
+      {\scriptsize\bfseries KIELIPALVELIMEN KONTEKSTI}\par
+      {\scriptsize\color{DeckBlue}OOPSLA 2024}\par
+      {\tiny Odotetut tyypit ja näkyvyysalueen sidonnat siirtyvät mallin kontekstiin.}
+    \end{column}
+  \end{columns}
+
+  \vspace{1mm}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.59\textwidth}
+      \includegraphics[width=\linewidth,height=.18\textheight,keepaspectratio]{assets/paper-type-constrained-title.png}
+    \end{column}
+    \begin{column}{0.37\textwidth}
+      {\scriptsize\bfseries TYYPPIEN RAJAAMA DEKOODAUS}\par
+      {\scriptsize\color{DeckBlue}PLDI 2025}\par
+      {\tiny Dekooderi hylkää jatkot, jotka eivät voi pysyä oikein tyypitettyinä.}
+    \end{column}
+  \end{columns}
+
+  \vspace{1mm}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.59\textwidth}
+      \includegraphics[width=\linewidth,height=.18\textheight,keepaspectratio]{assets/paper-generative-compilation-title.png}
+    \end{column}
+    \begin{column}{0.37\textwidth}
+      {\scriptsize\bfseries KÄÄNTÄJÄN PALAUTE GENEROINNIN AIKANA}\par
+      {\scriptsize\color{DeckBlue}Vuoden 2026 esijulkaisu}\par
+      {\tiny Kääntäjä diagnosoi osittaisia ohjelmia ennen generoinnin päättymistä.}
+    \end{column}
+  \end{columns}
+
+  \vfill
+  {\centering\color{DeckAccent}\small\bfseries
+    Tyypit voivat vaikuttaa ennen koodin generointia, sen aikana ja sen jälkeen.\par}
+  {\centering\color{DeckMuted}\tiny
+    arXiv:2409.00921 \textperiodcentered\ arXiv:2504.09246 \textperiodcentered\ arXiv:2607.13921\par}
+
+  \note{Edellinen esimerkki käytti kielipalvelinta antamaan mallille paremman
+  kontekstin. Ajatus näkyy jo julkaistussa tutkimuksessa, myös TypeScriptillä
+  toteutettuna ja arvioituna. Muissa töissä tyypit on kytketty vielä tiukemmin
+  generointiin: tyyppien rajaama dekoodaus estää jatkot, jotka eivät voi johtaa
+  oikein tyypitettyyn ohjelmaan. Uusin askel tuo kääntäjän diagnostiikan mukaan
+  jo generoinnin aikana tarkistamalla hyödyllisiä likiarvoja osittaisista
+  ohjelmista. Teknisistä eroistaan huolimatta suunta on yhteinen:
+  tyyppijärjestelmästä tulee aktiivinen osallistuja generointiin eikä vain
+  valmiin tuloksen tarkistaja.}
+\end{frame}}
+
+\begin{frame}[plain]
+  \centering
+  \vfill
+  {\color{DeckMuted}\fontsize{17}{20}\selectfont Kaikki tämä on kiinnostavaa.}\par
+  \vspace{5mm}
+  {\color{DeckText}\fontsize{22}{26}\selectfont\bfseries
+    Mutta miten sen pitäisi vaikuttaa\\tapaani työskennellä?}\par
+  \vspace{11mm}
+  {\color{DeckAccent}\fontsize{17}{20}\selectfont\bfseries Näin:}\par
+  \vspace{3mm}
+  {\color{DeckText}\fontsize{21}{25}\selectfont\bfseries
+    Kirjoita koodia, jota tekoälyn on helppo\\muokata oikein.}\par
+  \vfill
+\end{frame}
+
+{\setbeamerfont{frametitle}{size=\fontsize{17}{20}\selectfont,series=\bfseries}
+\begin{frame}[t]{Tyypit kantavat todisteet luottamusrajojen yli}
+  \centering
+  \trustboundarychain\par
+
+  \vspace{4mm}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.48\textwidth}
+      {\color{DeckAccent}\normalsize\bfseries LUOTTAMUSRAJA}\par
+      {\small Kohta, jossa järjestelmä alkaa tehdä tiedosta vahvempia oletuksia.}\par
+      \vspace{2mm}
+      {\small
+        tuntematon syöte $\rightarrow$ validoitu pyyntö\par
+        JWT $\rightarrow$ todennettu käyttäjä\par
+        käyttäjä $\rightarrow$ valtuutettu toiminto\par
+        mallin vastaus $\rightarrow$ hyväksytty sovellusdata}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      {\color{DeckAccent}\normalsize\bfseries RAJAN YLITTÄMINEN}\par
+      \vspace{1mm}
+      {\small\bfseries 1. Ajonaikainen tarkistus}\par
+      {\small muodostaa todisteen.}\par
+      \vspace{1mm}
+      {\small\bfseries 2. Tyyppi}\par
+      {\small säilyttää todisteen myöhempiä vaiheita varten.}\par
+      \vspace{1mm}
+      {\small\bfseries 3. Seuraava rajapinta}\par
+      {\small vaatii todisteen.}
+    \end{column}
+  \end{columns}
+
+  \vfill
+  {\centering\color{DeckAccent}\large\bfseries
+    Ajonaikainen tarkistus muodostaa tiedon.\\Tyyppi kantaa sen eteenpäin.\par}
+
+  \note{Luottamusraja ei tarkoita pelkästään verkon reunaa. Se syntyy aina,
+  kun ohjelma alkaa tehdä arvosta uuden oletuksen.
+
+  HTTP-pyynnön sisältöön ei vielä luoteta. Validoinnin jälkeen voimme luottaa
+  tiettyihin rakenteellisiin ominaisuuksiin. Allekirjoitettuun JWT:hen ei
+  luoteta ennen sen todentamista. Todennettu identiteetti ei puolestaan vielä
+  tarkoita, että käyttäjä saa käsitellä juuri tätä resurssia.
+
+  Ajonaikaisia tarkistuksia tarvitaan edelleen. Tyyppijärjestelmän tehtävä ei
+  ole korvata niitä, vaan säilyttää tieto siitä, mitä on jo tarkistettu.}
+\end{frame}}
+
+{\setbeamerfont{frametitle}{size=\fontsize{17}{20}\selectfont,series=\bfseries}
+\begin{frame}[t]{Tyypit kantavat todisteet luottamusrajojen yli}
+  \centering
+  \trustboundarychain\par
+
+  \vspace{4mm}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.47\textwidth}
+      {\color{DeckAccent}\small\bfseries TODISTETTA VAATIVA RAJAPINTA}\par
+      \vspace{2mm}
+      {\color{DeckMuted}\scriptsize\ttfamily
+        generateDescription(request, listing)}\par
+      {\color{DeckAccent}\small\bfseries verrattuna}\par
+      {\color{DeckText}\scriptsize\ttfamily
+        generateDescription(\\
+        \quad boundedRequest,\\
+        \quad listing,\\
+        \quad authorizationProof,\\
+        )}\par
+      \vspace{2mm}
+      {\small Todiste liittyy juuri käsiteltävään
+        \textbf{käyttäjään, organisaatioon, resurssiin ja toimintoon}.}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      {\color{DeckRed}\small\bfseries VAKAVAN VIRHEEN ESIMERKKEJÄ}\par
+      \begin{itemize}\small
+        \setlength\itemsep{1mm}
+        \item toiminto suoritetaan väärälle asiakkaalle tai resurssille;
+        \item käyttäjä saa oikeuden, jota hänelle ei ole myönnetty;
+        \item validoimaton syöte päätyy kalliiseen tai peruuttamattomaan prosessiin;
+        \item salainen tieto päätyy lokiin.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+
+  \vfill
+  {\centering\color{DeckAccent}\small\bfseries
+    Mitä vakavampi luottamusrajan ohittamisen seuraus on, sitä enemmän\\
+    tyyppitason koneistoa voidaan perustella.\par}
+
+  \note{Ilman tyyppitason erottelua myöhempi funktio saa helposti tavallisen
+  merkkijonon, tunnisteen tai boolean-arvon. Sen täytyy silloin luottaa siihen,
+  että joku muu on jo tehnyt tarvittavan tarkistuksen. Todistetta vaativa
+  rajapinta tekee tarkistuksen ohittamisesta näkyvän. Todisteen pitää liittyä
+  juuri siihen käyttäjään, organisaatioon, resurssiin ja toimintoon, jota
+  käsitellään.
+
+  Yksinkertaisessa sovelluksessa näin raskas mekanismi voi olla tarpeeton.
+  Mutta jos tarkistuksen unohtaminen voi aiheuttaa tietovuodon, väärän asiakkaan
+  tietojen käsittelyn tai peruuttamattoman liiketoimintatoiminnon, koneiston
+  kustannus voi olla hyvin perusteltu.
+
+  Tavoitteena ei ole tehdä kaikesta todistettavaa. Tavoitteena on tunnistaa
+  rajat, joiden vahingossa ohittaminen olisi erityisen kallista.}
+\end{frame}}
+
+\begin{frame}{LLM:lle välitettävä kenttä voi kasvaa rajatta}
   \vspace{8mm}
-  {\Large\bfseries An agent adds \texttt{streetAddress?: string | null}}\par
+  {\Large\bfseries Agentti lisää kentän \texttt{streetAddress?: string | null}}\par
   \vspace{12mm}
-  {\color{DeckMuted}\Large The request still looks valid to TypeScript.}\par
+  {\color{DeckMuted}\Large Pyyntö näyttää TypeScriptin mielestä yhä kelvolliselta.}\par
   \vspace{13mm}
-  {\color{DeckAccent}\fontsize{24}{28}\selectfont\bfseries Which test now has to change?}
+  {\color{DeckAccent}\fontsize{24}{28}\selectfont\bfseries Minkä testin on nyt muututtava?}
 \end{frame}
 
-\begin{frame}[fragile]{Derive the fields requiring an abuse test}
-\begin{lstlisting}[style=deckcode,language=Java]
+\begin{frame}[fragile]{Johda tyypistä väärinkäyttötestin vaativat kentät}
+\begin{lstlisting}[style=deckcode,language=TypeScript]
 type StringLikeKey = {
   [K in keyof AiSearchFilters]-?:
     NonNullable<AiSearchFilters[K]> extends string | string[]
@@ -178,11 +399,11 @@ type StringLikeKey = {
 
 // "query" | "city" | "postalCode"
 \end{lstlisting}
-  \bottomline{A new string field changes this union automatically.}
+  \bottomline{Uusi merkkijonokenttä muuttaa unionia automaattisesti.}
 \end{frame}
 
-\begin{frame}[fragile]{The type of an exhaustive test table}
-\begin{lstlisting}[style=deckcode,language=Java]
+\begin{frame}[fragile]{Kattavan testitaulukon tyyppi}
+\begin{lstlisting}[style=deckcode,language=TypeScript]
 type OverlongValue<K extends StringLikeKey> =
   NonNullable<AiSearchFilters[K]> extends string[]
     ? string[] : string;
@@ -195,11 +416,11 @@ type TestCases = {
   };
 };
 \end{lstlisting}
-  \bottomline{A new string field becomes a required test case.}
+  \bottomline{Uudesta merkkijonokentästä tulee pakollinen testitapaus.}
 \end{frame}
 
-\begin{frame}[fragile]{The complete test-case table}
-\begin{lstlisting}[style=deckcode,language=Java,basicstyle=\ttfamily\footnotesize\color{DeckText}]
+\begin{frame}[fragile]{Täydellinen testitaulukko}
+\begin{lstlisting}[style=deckcode,language=TypeScript,basicstyle=\ttfamily\footnotesize\color{DeckText}]
 const cases = {
   query: {
     maxLength: 120, validValue: ["ok"],
@@ -215,11 +436,11 @@ const cases = {
   },
 } satisfies TestCases;
 \end{lstlisting}
-  \bottomline{Omit \texttt{postalCode} and TypeScript points at the gap.}
+  \bottomline{Jätä \texttt{postalCode} pois, niin TypeScript osoittaa puuttuvan tapauksen.}
 \end{frame}
 
-\begin{frame}[fragile]{Then test the runtime boundary}
-\begin{lstlisting}[style=deckcode,language=Java]
+\begin{frame}[fragile]{Testaa seuraavaksi ajonaikainen raja}
+\begin{lstlisting}[style=deckcode,language=TypeScript]
 for (const [key, c] of Object.entries(cases)) {
   expect(parseRequest(
     withFilter(key, c.validValue)
@@ -231,22 +452,22 @@ for (const [key, c] of Object.entries(cases)) {
   )).toBeNull();
 }
 \end{lstlisting}
-  \bottomline{Compiler: include a case. Test: the parser rejects it.}
+  \bottomline{Kääntäjä: lisää tapaus. Testi: jäsennin hylkää sen.}
 \end{frame}
 
-\begin{frame}{The boundary of that guarantee}
+\begin{frame}{Tähän takuu päättyy}
   \vspace{7mm}
-  {\Large\bfseries New field}\par
+  {\Large\bfseries Uusi kenttä}\par
   \vspace{7mm}
-  {\color{DeckRed}\Large Missing test case: compile error}\par
+  {\color{DeckRed}\Large Puuttuva testitapaus: kääntäjävirhe}\par
   \vspace{7mm}
-  {\color{DeckAccent}\Large Missing runtime limit: failing test}\par
+  {\color{DeckAccent}\Large Puuttuva ajonaikainen raja: epäonnistuva testi}\par
   \vfill
-  {\color{DeckMuted}\Large Other payload growth needs other limits.}
+  {\color{DeckMuted}\Large Muu syötteen kasvu tarvitsee omat rajansa.}
 \end{frame}
 
-\begin{frame}[fragile]{A value and its permit}
-\begin{lstlisting}[style=deckcode,language=Java]
+\begin{frame}[fragile]{Arvo ja sen lupa}
+\begin{lstlisting}[style=deckcode,language=TypeScript]
 type DeletePermit = {
   readonly applicationId: ApplicationId;
   readonly [permitBrand]: true;
@@ -256,12 +477,12 @@ function deleteApplication(
   id: ApplicationId, permit: DeletePermit
 ): void;
 
-deleteApplication(appB, permitForAppA); // type-checks
+deleteApplication(appB, permitForAppA); // tyyppitarkistus onnistuu
 \end{lstlisting}
-  \bottomline[DeckRed]{The permit has an ID. The signature cannot equate the two IDs.}
+  \bottomline[DeckRed]{Luvalla on tunniste. Allekirjoitus ei voi osoittaa tunnisteita samoiksi.}
 \end{frame}
 
-\begin{frame}[fragile]{Give this value a fresh type-level name}
+\begin{frame}[fragile]{Anna arvolle uusi tyyppitason nimi}
 \begin{lstlisting}[style=deckcode,language=Haskell]
 name :: a -> (forall name. a ~~ name -> t) -> t
 
@@ -270,10 +491,10 @@ name jwtA $ \namedA ->
     -- namedA :: SignedJWT ~~ a
     -- namedB :: SignedJWT ~~ b
 \end{lstlisting}
-  \bottomline{The two names cannot be exchanged in well-typed code.}
+  \bottomline{Nimiä ei voi vaihtaa keskenään oikein tyypitetyssä koodissa.}
 \end{frame}
 
-\begin{frame}[fragile]{A proof names the value it describes}
+\begin{frame}[fragile]{Todiste nimeää kuvaamansa arvon}
 \begin{lstlisting}[style=deckcode,language=Haskell]
 isPrime :: (Int ~~ n) -> Maybe (Proof (IsPrime n))
 
@@ -282,12 +503,12 @@ usePrime
   -> Proof (IsPrime n)
   -> m ()
 
-usePrime namedB proofForA  -- names do not unify
+usePrime namedB proofForA  -- nimet ovat eri
 \end{lstlisting}
-  \bottomline{“Prime” is a property of a particular named integer.}
+  \bottomline{Alkulukulaisuus on tietyn nimetyn kokonaisluvun ominaisuus.}
 \end{frame}
 
-\begin{frame}[fragile]{Proofs cannot cross issuers}
+\begin{frame}[fragile]{Todisteet eivät kelpaa myöntäjien välillä}
 \begin{lstlisting}[style=deckcode,language=Haskell]
 getClaimsOf @"azure" namedJWT
   :: m (Maybe
@@ -299,10 +520,10 @@ hasAzureRole @"administrator" azureClaims
        (Proof (ClaimsOf token
          `HasAzureRole` "administrator"))
 \end{lstlisting}
-  \bottomline[DeckRed]{OKTA claims cannot satisfy the Azure role checker.}
+  \bottomline[DeckRed]{OKTA-väitteet eivät kelpaa Azuren roolitarkistukseen.}
 \end{frame}
 
-\begin{frame}[fragile]{Authorization becomes a proposition}
+\begin{frame}[fragile]{Valtuutus muuttuu väittämäksi}
 \begin{lstlisting}[style=deckcode,language=Haskell]
 canDeleteApps :: Proof (
   (token `IssuedBy` "azure"
@@ -314,10 +535,10 @@ buildAuthorizationProof
   :: SignedJWT ~~ token
   -> m (Maybe (Proof (CanDeleteApps token)))
 \end{lstlisting}
-  \bottomline{The protected call requires \texttt{Proof (CanDeleteApps token)}.}
+  \bottomline{Suojattu kutsu vaatii arvon \texttt{Proof (CanDeleteApps token)}.}
 \end{frame}
 
-\begin{frame}[fragile]{Carry an unknown name with its proof}
+\begin{frame}[fragile]{Kuljeta tuntematon nimi todisteen mukana}
 \begin{lstlisting}[style=deckcode,language=Haskell]
 data AuthorizedJWT where
   AuthorizedJWT
@@ -327,12 +548,12 @@ data AuthorizedJWT where
 
 useAuthorized (AuthorizedJWT jwt proof) =
   actAs jwt proof
-  -- both arguments share hidden token
+  -- argumenteilla on sama piilotettu token
 \end{lstlisting}
-  \bottomline{Existential: the caller need not know the token name.}
+  \bottomline{Eksistentiaali: kutsujan ei tarvitse tuntea tokenin nimeä.}
 \end{frame}
 
-\begin{frame}[fragile]{Another route: typed logging}
+\begin{frame}[fragile]{Toinen reitti: tyypitetty lokitus}
 \begin{lstlisting}[style=deckcode,language=Haskell]
 logInfoF @"session %{SessionKey}" sessionKey
 
@@ -344,27 +565,27 @@ instance
          (slotName ': slotNames) format m
          (argument -> result)
 \end{lstlisting}
-  \bottomline{The format requires both a permitted value and the right slot.}
+  \bottomline{Muoto vaatii sekä sallitun arvon että oikean paikan.}
 \end{frame}
 
-\begin{frame}{Which guarantees are worth the machinery?}
+\begin{frame}{Mitkä takuut ovat vaivan arvoisia?}
   \vspace{5mm}
-  {\Large Exhaustive tables require a maintenance decision.}\par
+  {\Large Kattavat taulukot pakottavat tekemään ylläpitopäätöksen.}\par
   \vspace{9mm}
-  {\color{DeckAccent}\Large GDP relates evidence to a particular value.}\par
+  {\color{DeckAccent}\Large GDP sitoo todisteen tiettyyn arvoon.}\par
   \vspace{9mm}
-  {\color{DeckBlue}\Large Runtime validation establishes the evidence.}\par
+  {\color{DeckBlue}\Large Ajonaikainen validointi tuottaa todisteen.}\par
   \vfill
-  {\color{DeckMuted}\Large Use the simplest contract that covers the risk.}
+  {\color{DeckMuted}\Large Käytä yksinkertaisinta sopimusta, joka kattaa riskin.}
 \end{frame}
 
-\begin{frame}{A question for your next code change}
-  \vspace{13mm}
-  {\fontsize{29}{34}\selectfont\bfseries
-  Which assumption should become\\a compiler error?}\par
-  \vspace{16mm}
+\begin{frame}{Kysymys seuraavaa koodimuutostasi varten}
+  \vspace{6mm}
+  {\fontsize{26}{31}\selectfont\bfseries
+  Minkä oletuksen pitäisi muuttua\\kääntäjävirheeksi?}\par
+  \vspace{10mm}
   {\color{DeckAccent}\Large\bfseries
-  And what runtime check must make that error meaningful?}
+  Ja mikä ajonaikainen tarkistus\\tekee virheestä merkityksellisen?}
 \end{frame}
 
 \end{document}
